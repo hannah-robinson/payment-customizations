@@ -5,6 +5,8 @@
  * @typedef {import("../generated/api").InputQuery} InputQuery
  * @typedef {import("../generated/api").FunctionResult} FunctionResult
  * @typedef {import("../generated/api").HideOperation} HideOperation
+ * @typedef {import("../generated/api").RenameOperation} RenameOperation
+ * @typedef {import("../generated/api").MoveOperation} MoveOperation
  */
 
 /**
@@ -20,34 +22,30 @@ export default /**
  * @returns {FunctionResult}
  */
 (input) => {
-  // Get the cart total from the function input, and return early if it's below 100
-  const cartTotal = parseFloat(input.cart.cost.totalAmount.amount ?? '0.0')
-  if (cartTotal < 100) {
-    // You can use STDERR for debug logs in your function
-    console.error(
-      'Cart total is not high enough, no need to hide the payment method.'
-    )
-    return NO_CHANGES
-  } else {
-    console.log('Shopify Function says order >= 100')
-  }
-
-  // Find the payment method to hide
-  const hidePaymentMethod = input.paymentMethods.find((method) =>
+  const targetPaymentMethodName = input.paymentMethods.find((method) =>
     method.name.includes('Cash on Delivery')
   )
 
-  if (!hidePaymentMethod) {
+  if (!targetPaymentMethodName) {
     return NO_CHANGES
   }
+
+  console.log('targetPaymentMethodName ID', targetPaymentMethodName.id)
 
   // The @shopify/shopify_function package applies JSON.stringify() to your function result
   // and writes it to STDOUT
   return {
     operations: [
       {
-        hide: {
-          paymentMethodId: hidePaymentMethod.id,
+        move: {
+          index: 1,
+          paymentMethodId: targetPaymentMethodName.id,
+        },
+      },
+      {
+        rename: {
+          name: 'My wording was changed and I was moved to the top',
+          paymentMethodId: targetPaymentMethodName.id,
         },
       },
     ],
